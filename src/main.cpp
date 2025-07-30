@@ -148,6 +148,9 @@ public:
     virtual void update(const callbackParams &prams) override
     {
         std::cout << "Updating" << m_name << "\n";
+        SM::Event ev = {.m_type = SM::Event::Type::GotPassword, .m_sender_state = this};
+
+        needToSwitch(ev);
     };
     virtual void exit(const callbackParams &prams) override
     {
@@ -207,6 +210,12 @@ private:
                 std::cout << "Unknown state: TryAgain\n";
             break;
         case SM::Event::Type::GotPassword:
+            state = findState("NewLogin");
+            if (state) {
+                m_cur_state = *state;
+                m_cur_state->init({});
+            } else
+                std::cout << "Unknown state: NewLogin\n";
             break;
         default:
             std::cout << "Unknown type: " << (uint) type << '\n';
@@ -216,10 +225,16 @@ private:
 
 int main()
 {
-    std::cout << "=== Hello" << "\n";
     Scen sc;
+    std::cout << "=== Hello" << "\n";
+    sc.update({});
+    sc.update({});
+    sc.update({});
     sc.update({});
     std::cout << "=== Hello" << "\n";
+    sc.update({});
+    std::cout << "=== Hello" << "\n";
+    sc.update({});
     sc.update({});
     return 0;
 }
