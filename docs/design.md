@@ -107,10 +107,10 @@ SP -> [*]
 ```plantuml
 ' left to right direction
 
-state "ReqestOldPassword" as ROP
-state "CheckPassword" as CP
-state "RequestNewPassword" as RNP
-state "SavePassword" as SP
+state "ReqestOldPassword" as ROP : Запрашивает старый пароль
+state "CheckPassword" as CP : Проверяет пароль
+state "RequestNewPassword" as RNP : Запрашивает новый пароль
+state "RequestSavePassword" as RSP : Запрашивает сохранение пароля
 
 [*] -> ROP
 ROP ---> CP : Пароль пришел
@@ -118,6 +118,6 @@ ROP -> ROP : Пароля нет
 CP ---> ROP : Неправильный пароль
 CP --> RNP : Старый пароль правильный
 RNP -> RNP: Пароля нет
-RNP --> SP : Новый пароль пришел
-SP -> [*]
+RNP --> RSP : Новый пароль пришел
+RSP -> [*]
 ```
