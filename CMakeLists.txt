@@ -3,3 +3,4 @@ project(StateMachine)
 
 add_subdirectory(libstate)
 add_subdirectory(src)
+add_subdirectory(examples)

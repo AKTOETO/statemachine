@@ -13,98 +13,98 @@
 
 ////// EXAMPLE 1
 
-namespace States{
-    class TryAgain : public SM::State
-    {
-      public:
-        TryAgain()
-            : SM::State("TryAgain"){};
+// namespace States{
+//     class TryAgain : public SM::State
+//     {
+//       public:
+//         TryAgain()
+//             : SM::State("TryAgain"){};
 
-        virtual void update(const callbackParams &prams) override
-        {
-            std::cout << "Updating" << m_name << "\n";
-            SM::Event ev = {.m_type = SM::Event::Type::GotPassword, .m_sender_state = this};
+//         virtual void update(const callbackParams &prams) override
+//         {
+//             std::cout << "Updating" << m_name << "\n";
+//             SM::Event ev {SM::Event::Type::GotPassword, this};
 
-            needToSwitch(ev);
-        };
-    };
+//             needToSwitch(ev);
+//         };
+//     };
 
-    class NewLogin : public SM::State
-    {
-      public:
-        NewLogin()
-            : SM::State("NewLogin"){};
+//     class NewLogin : public SM::State
+//     {
+//       public:
+//         NewLogin()
+//             : SM::State("NewLogin"){};
 
-        virtual void update(const callbackParams &prams) override
-        {
-            std::cout << "Updating" << m_name << "\n";
-            SM::Event ev = {.m_type = SM::Event::Type::TryAgain, .m_sender_state = this};
+//         virtual void update(const callbackParams &prams) override
+//         {
+//             std::cout << "Updating" << m_name << "\n";
+//             SM::Event ev {SM::Event::Type::TryAgain, this};
 
-            SM::State::callbackParams param = {{"password", "true"}};
-            request(param);
+//             SM::State::callbackParams param = {{"password", "true"}};
+//             request(param);
 
-            needToSwitch(ev);
-        };
-    };
+//             needToSwitch(ev);
+//         };
+//     };
 
-    class RequestPassword : public SM::State
-    {
-      public:
-        RequestPassword()
-            : SM::State("RequestPassword"){};
+//     class RequestPassword : public SM::State
+//     {
+//       public:
+//         RequestPassword()
+//             : SM::State("RequestPassword"){};
 
-        virtual void update(const callbackParams &prams) override
-        {
-            //request()
-        }
-    };
-}
-class Scen : public SM::Scenario
-{
-  public:
-    Scen()
-    {
-        addState(std::make_shared<States::NewLogin>());
-        addState(std::make_shared<States::TryAgain>());
-        setStartState("NewLogin");
-    }
+//         virtual void update(const callbackParams &prams) override
+//         {
+//             //request()
+//         }
+//     };
+// }
+// class Scen : public SM::Scenario
+// {
+//   public:
+//     Scen()
+//     {
+//         addState(std::make_shared<States::NewLogin>());
+//         addState(std::make_shared<States::TryAgain>());
+//         setStartState("NewLogin");
+//     }
 
-  private:
-    virtual void switcher(const SM::Event &event) override
-    {
-        auto &sender = event.m_sender_state;
-        auto &type = event.m_type;
+//   private:
+//     virtual void switcher(const SM::Event &event) override
+//     {
+//         auto &sender = event.m_sender_state;
+//         auto &type = event.m_type;
 
-        sender->exit({});
-        std::optional<std::shared_ptr<SM::State>> state;
-        // Логика переключения состояний
-        switch (type)
-        {
-        case SM::Event::Type::TryAgain:
-            state = findState("TryAgain");
-            if (state)
-            {
-                m_cur_state = *state;
-                m_cur_state->init({});
-            }
-            else
-                std::cout << "Unknown state: TryAgain\n";
-            break;
-        case SM::Event::Type::GotPassword:
-            state = findState("NewLogin");
-            if (state)
-            {
-                m_cur_state = *state;
-                m_cur_state->init({});
-            }
-            else
-                std::cout << "Unknown state: NewLogin\n";
-            break;
-        default:
-            std::cout << "Unknown type: " << (uint)type << '\n';
-        }
-    }
-};
+//         sender->exit({});
+//         std::optional<std::shared_ptr<SM::State>> state;
+//         // Логика переключения состояний
+//         switch (type)
+//         {
+//         case SM::Event::Type::TryAgain:
+//             state = findState("TryAgain");
+//             if (state)
+//             {
+//                 m_cur_state = *state;
+//                 m_cur_state->init({});
+//             }
+//             else
+//                 std::cout << "Unknown state: TryAgain\n";
+//             break;
+//         case SM::Event::Type::GotPassword:
+//             state = findState("NewLogin");
+//             if (state)
+//             {
+//                 m_cur_state = *state;
+//                 m_cur_state->init({});
+//             }
+//             else
+//                 std::cout << "Unknown state: NewLogin\n";
+//             break;
+//         default:
+//             std::cout << "Unknown type: " << (uint)type << '\n';
+//         }
+//     }
+// };
 
 int main()
 {

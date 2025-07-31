@@ -11,19 +11,7 @@
 // Пространство имен библиотеки состояний
 namespace SM
 {
-    class State;
-    // Структура события, передаваемая при желании переключиться
-    struct Event
-    {
-        enum class Type
-        {
-            TryAgain,
-            GotPassword
-        };
-        Type m_type;
-        State *m_sender_state = nullptr;
-    };
-
+    class Event;
     // Структура описывает состояние в текущем сценарии
     class State
     {
@@ -83,6 +71,23 @@ namespace SM
         std::string m_name;
         std::function<void(const Event &)> m_switcher;
         std::function<void(const callbackParams &params)> m_requester;
+    };
+
+    // Структура события, передаваемая при желании переключиться
+    struct Event
+    {
+        enum class Type
+        {
+            None,
+            TryAgain,
+            GotPassword
+        };
+        Type m_type;
+        State *m_sender_state = nullptr;
+        State::callbackParams m_data;
+        
+        Event(){};
+        Event(Type type, State* state, const State::callbackParams& data = {});
     };
 
     // Сценарий взаимодействия состояний

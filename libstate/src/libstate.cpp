@@ -12,9 +12,9 @@ namespace SM
     {
     }
 
-    State::~State(){
-
-    };
+    State::~State()
+    {
+    }
 
     void State::setSwitcher(std::function<void(const Event &)> switcher)
     {
@@ -104,5 +104,12 @@ namespace SM
             std::cout << "Updating state: " << m_cur_state->getName() << "\n";
             m_cur_state->update(params);
         }
+    }
+
+    Event::Event(Event::Type type, State *state, const State::callbackParams &data)
+        : m_type(type)
+        , m_sender_state(state)
+        , m_data(data)
+    {
     }
 } // namespace SM
