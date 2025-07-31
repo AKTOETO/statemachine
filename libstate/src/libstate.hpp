@@ -24,16 +24,9 @@ namespace SM
         State *m_sender_state = nullptr;
     };
 
-    class Scenario;
     // Структура описывает состояние в текущем сценарии
     class State
     {
-        friend Scenario;
-
-      protected:
-        std::function<void(const Event &)> m_switcher = nullptr;
-        std::string m_name;
-
       public:
         State(const std::string &name);
         virtual ~State();
@@ -47,11 +40,17 @@ namespace SM
          * @brief Функция запуска состояния. Вызывается при переходе в это
          * состояние.
          *
-         * @param prams Параметры для функции инициализации текущего состояния
+         * @param params Параметры для функции инициализации текущего состояния
          */
-        virtual void init(const callbackParams &prams){};
-        virtual void update(const callbackParams &prams){};
-        virtual void exit(const callbackParams &prams){};
+        virtual void init(const callbackParams &params){};
+
+        /// @brief Обновление состояния с учетом переданных данных
+        /// @param params данные
+        virtual void update(const callbackParams &params){};
+
+        /// @brief Выход из текущего состояния
+        /// @param params параметры для выхода
+        virtual void exit(const callbackParams &params){};
 
         /**
          * @brief Установка функции уведомления о переключении
@@ -60,6 +59,14 @@ namespace SM
          */
         void setSwitcher(std::function<void(const Event &)> switcher);
 
+        /// @brief Установить callback для выполнения запросов из состояния
+        /// @param requester callback
+        void setRequester(std::function<void(const callbackParams &params)> requester);
+
+        /// @brief Получить имя состояния
+        /// @return имя состояния
+        const std::string &getName() const;
+
       protected:
         /**
          * @brief Переключение с событием. Нужно для наследованных состояний
@@ -67,6 +74,15 @@ namespace SM
          * @param event Событие переключения
          */
         void needToSwitch(const Event &event);
+
+        /// @brief Отправить запрос
+        /// @param params данные запроса
+        void request(const callbackParams &params);
+
+      protected:
+        std::string m_name;
+        std::function<void(const Event &)> m_switcher;
+        std::function<void(const callbackParams &params)> m_requester;
     };
 
     // Сценарий взаимодействия состояний
@@ -75,6 +91,7 @@ namespace SM
       protected:
         std::shared_ptr<State> m_cur_state = nullptr;
         std::list<std::shared_ptr<State>> m_states;
+        std::function<void(const State::callbackParams &params)> m_requester;
 
         /**
          * @brief Функция переключения состояния. Реализуется в каждом сценарии
@@ -84,9 +101,18 @@ namespace SM
          */
         virtual void switcher(const Event &event) = 0;
 
+        /// @brief Найти загруженное состояние
+        /// @param name имя состояния
+        /// @return Если состояние есть `std::shared_ptr<State>`, иначе `std::nullopt`
         std::optional<std::shared_ptr<State>> findState(const std::string &name);
 
+        /// @brief Установить загруженное состояние
+        /// @param name имя состояния
         void setStartState(const std::string &name);
+
+        /// @brief Отправить запрос
+        /// @param params данные запроса
+        void request(const State::callbackParams &params);
 
       public:
         Scenario();

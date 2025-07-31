@@ -13,57 +13,59 @@
 
 ////// EXAMPLE 1
 
-class StateTryAgain : public SM::State
-{
-  public:
-    StateTryAgain() : SM::State("TryAgain"){};
-
-    virtual void init(const callbackParams &prams) override
+namespace States{
+    class TryAgain : public SM::State
     {
-        std::cout << "Initing...." << m_name << "\n";
-    };
-    virtual void update(const callbackParams &prams) override
-    {
-        std::cout << "Updating" << m_name << "\n";
-        SM::Event ev = {.m_type = SM::Event::Type::GotPassword, .m_sender_state = this};
+      public:
+        TryAgain()
+            : SM::State("TryAgain"){};
 
-        needToSwitch(ev);
-    };
-    virtual void exit(const callbackParams &prams) override
-    {
-        std::cout << "exiting..." << m_name << "\n";
-    };
-};
+        virtual void update(const callbackParams &prams) override
+        {
+            std::cout << "Updating" << m_name << "\n";
+            SM::Event ev = {.m_type = SM::Event::Type::GotPassword, .m_sender_state = this};
 
-class StateNewLogin : public SM::State
-{
-  public:
-    StateNewLogin() : SM::State("NewLogin"){};
-
-    virtual void init(const callbackParams &prams) override
-    {
-        std::cout << "Initing...." << m_name << "\n";
+            needToSwitch(ev);
+        };
     };
-    virtual void update(const callbackParams &prams) override
-    {
-        std::cout << "Updating" << m_name << "\n";
-        SM::Event ev = {.m_type = SM::Event::Type::TryAgain, .m_sender_state = this};
 
-        needToSwitch(ev);
-    };
-    virtual void exit(const callbackParams &prams) override
+    class NewLogin : public SM::State
     {
-        std::cout << "exiting..." << m_name << "\n";
-    };
-};
+      public:
+        NewLogin()
+            : SM::State("NewLogin"){};
 
+        virtual void update(const callbackParams &prams) override
+        {
+            std::cout << "Updating" << m_name << "\n";
+            SM::Event ev = {.m_type = SM::Event::Type::TryAgain, .m_sender_state = this};
+
+            SM::State::callbackParams param = {{"password", "true"}};
+            request(param);
+
+            needToSwitch(ev);
+        };
+    };
+
+    class RequestPassword : public SM::State
+    {
+      public:
+        RequestPassword()
+            : SM::State("RequestPassword"){};
+
+        virtual void update(const callbackParams &prams) override
+        {
+            //request()
+        }
+    };
+}
 class Scen : public SM::Scenario
 {
   public:
     Scen()
     {
-        addState(std::make_shared<StateNewLogin>());
-        addState(std::make_shared<StateTryAgain>());
+        addState(std::make_shared<States::NewLogin>());
+        addState(std::make_shared<States::TryAgain>());
         setStartState("NewLogin");
     }
 
