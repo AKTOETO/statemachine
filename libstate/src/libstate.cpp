@@ -8,17 +8,11 @@ namespace SM
     State::State(const std::string &name)
         : m_name(name)
         , m_requester(nullptr)
-        , m_switcher(nullptr)
     {
     }
 
     State::~State()
     {
-    }
-
-    void State::setSwitcher(std::function<void(const Event &)> switcher)
-    {
-        m_switcher = switcher;
     }
 
     void State::setRequester(std::function<void(const callbackParams &params)> requester)
@@ -31,12 +25,6 @@ namespace SM
         return m_name;
     }
 
-    void State::needToSwitch(const Event &event)
-    {
-        std::cout << "Need to switch '" << m_name << "' event: " << (uint)event.m_type << "\n";
-        if (m_switcher)
-            m_switcher(event);
-    }
     void State::request(const callbackParams &params)
     {
         std::cout << "Requesting smth" << '\n';
@@ -57,7 +45,7 @@ namespace SM
         if (state)
         {
             m_cur_state = *state;
-            m_cur_state->init({});
+            transfer(m_cur_state->init({}));
         }
         else
         {
@@ -74,10 +62,10 @@ namespace SM
     Scenario::~Scenario()
     {
         if (m_cur_state)
-            m_cur_state->exit({});
+            transfer(m_cur_state->exit({}));
     }
 
-    void Scenario::request(const State::callbackParams &params)
+    void Scenario::request(const callbackParams &params)
     {
         std::cout << "Scenario::Reqesting\n";
         if (m_requester)
@@ -92,24 +80,39 @@ namespace SM
             if (el->getName() == state->getName())
                 return;
         }
-        state->setSwitcher([this](const Event &event) { switcher(event); });
-        state->setRequester([this](const State::callbackParams &params) { request(params); });
+        state->setRequester([this](const callbackParams &params) { request(params); });
         m_states.push_back(state);
     }
 
-    void Scenario::update(const State::callbackParams &params)
+    void Scenario::update(const callbackParams &params)
     {
         if (m_cur_state)
         {
             std::cout << "Updating state: " << m_cur_state->getName() << "\n";
-            m_cur_state->update(params);
+            transfer(m_cur_state->update(params));
         }
     }
 
-    Event::Event(Event::Type type, State *state, const State::callbackParams &data)
-        : m_type(type)
-        , m_sender_state(state)
-        , m_data(data)
+    namespace Events
     {
-    }
+        Base::Base(Type type, State *state, const callbackParams &data)
+            : m_type(type)
+            , m_sender_state(state)
+            , m_data(data)
+        {
+        }
+        Switch::Switch(State *state, const callbackParams &data)
+            : Base(Type::Switch, state, data)
+        {
+        }
+        None::None(State *state, const callbackParams &data)
+            : Base(Type::None, state, data)
+        {
+        }
+        Request::Request(State *state, const callbackParams &data)
+            : Base(Type::Request, state, data)
+        {
+        }
+    } // namespace Events
+
 } // namespace SM

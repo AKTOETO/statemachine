@@ -11,7 +11,56 @@
 // Пространство имен библиотеки состояний
 namespace SM
 {
-    class Event;
+    // параметры функции обратного вызова для состояния
+    using callbackParams = std::map<std::string, std::string>;
+    // тип функции обратного вызова
+    using callbackType = std::function<void(callbackParams)>;
+
+    class State;
+
+    namespace Events
+    {
+        // Типы возможных событий
+        enum class Type
+        {
+            None,
+            Request,
+            Switch,
+
+            TryAgain,
+            GotPassword
+        };
+
+        // Структура события, передаваемая при желании переключиться
+        struct Base
+        {
+            Type m_type;
+            State *m_sender_state = nullptr;
+            callbackParams m_data;
+
+            Base(){};
+            Base(Type type, State *state, const callbackParams &data = {});
+        };
+
+        // Тип переключения на другое состояние
+        struct Switch : public Base
+        {
+            Switch(State *state, const callbackParams &data = {});
+        };
+
+        struct Request : public Base
+        {
+            Request(State *state, const callbackParams &data = {});
+        };
+
+        // Никакого события не произошло
+        struct None : public Base
+        {
+            None(State *state, const callbackParams &data = {});
+        };
+
+    } // namespace Events
+
     // Структура описывает состояние в текущем сценарии
     class State
     {
@@ -19,33 +68,30 @@ namespace SM
         State(const std::string &name);
         virtual ~State();
 
-        // параметры функции обратного вызова для состояния
-        using callbackParams = std::map<std::string, std::string>;
-        // тип функции обратного вызова
-        using callbackType = std::function<void(callbackParams)>;
-
         /**
          * @brief Функция запуска состояния. Вызывается при переходе в это
          * состояние.
          *
          * @param params Параметры для функции инициализации текущего состояния
          */
-        virtual void init(const callbackParams &params){};
+        virtual Events::Base init(const callbackParams &params)
+        {
+            return Events::Base{Events::Type::None, this};
+        };
 
         /// @brief Обновление состояния с учетом переданных данных
         /// @param params данные
-        virtual void update(const callbackParams &params){};
+        virtual Events::Base update(const callbackParams &params)
+        {
+            return Events::Base{Events::Type::None, this};
+        };
 
         /// @brief Выход из текущего состояния
         /// @param params параметры для выхода
-        virtual void exit(const callbackParams &params){};
-
-        /**
-         * @brief Установка функции уведомления о переключении
-         *
-         * @param switcher функция - переключатель
-         */
-        void setSwitcher(std::function<void(const Event &)> switcher);
+        virtual Events::Base exit(const callbackParams &params)
+        {
+            return Events::Base{Events::Type::None, this};
+        };
 
         /// @brief Установить callback для выполнения запросов из состояния
         /// @param requester callback
@@ -56,38 +102,13 @@ namespace SM
         const std::string &getName() const;
 
       protected:
-        /**
-         * @brief Переключение с событием. Нужно для наследованных состояний
-         *
-         * @param event Событие переключения
-         */
-        void needToSwitch(const Event &event);
-
         /// @brief Отправить запрос
         /// @param params данные запроса
         void request(const callbackParams &params);
 
       protected:
         std::string m_name;
-        std::function<void(const Event &)> m_switcher;
         std::function<void(const callbackParams &params)> m_requester;
-    };
-
-    // Структура события, передаваемая при желании переключиться
-    struct Event
-    {
-        enum class Type
-        {
-            None,
-            TryAgain,
-            GotPassword
-        };
-        Type m_type;
-        State *m_sender_state = nullptr;
-        State::callbackParams m_data;
-        
-        Event(){};
-        Event(Type type, State* state, const State::callbackParams& data = {});
     };
 
     // Сценарий взаимодействия состояний
@@ -96,7 +117,7 @@ namespace SM
       protected:
         std::shared_ptr<State> m_cur_state = nullptr;
         std::list<std::shared_ptr<State>> m_states;
-        std::function<void(const State::callbackParams &params)> m_requester;
+        std::function<void(const callbackParams &params)> m_requester;
 
         /**
          * @brief Функция переключения состояния. Реализуется в каждом сценарии
@@ -104,7 +125,7 @@ namespace SM
          *
          * @param event событие переключения
          */
-        virtual void switcher(const Event &event) = 0;
+        virtual void switcher(const Events::Base &event) = 0;
 
         /// @brief Найти загруженное состояние
         /// @param name имя состояния
@@ -117,7 +138,11 @@ namespace SM
 
         /// @brief Отправить запрос
         /// @param params данные запроса
-        void request(const State::callbackParams &params);
+        void request(const callbackParams &params);
+
+        /// @brief Функция обработки переходов из одного состояния в другое
+        /// @param event Событие перехода
+        virtual void transfer(const Events::Base &event){};
 
       public:
         Scenario();
@@ -127,7 +152,7 @@ namespace SM
         /// @param state само состояние
         void addState(std::shared_ptr<State> state);
 
-        void update(const State::callbackParams &params);
+        void update(const callbackParams &params);
     };
 } // namespace SM
 

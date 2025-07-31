@@ -23,7 +23,7 @@
 //         virtual void update(const callbackParams &prams) override
 //         {
 //             std::cout << "Updating" << m_name << "\n";
-//             SM::Event ev {SM::Event::Type::GotPassword, this};
+//             SM::Base ev {SM::Type::GotPassword, this};
 
 //             needToSwitch(ev);
 //         };
@@ -38,7 +38,7 @@
 //         virtual void update(const callbackParams &prams) override
 //         {
 //             std::cout << "Updating" << m_name << "\n";
-//             SM::Event ev {SM::Event::Type::TryAgain, this};
+//             SM::Base ev {SM::Type::TryAgain, this};
 
 //             SM::State::callbackParams param = {{"password", "true"}};
 //             request(param);
@@ -70,7 +70,7 @@
 //     }
 
 //   private:
-//     virtual void switcher(const SM::Event &event) override
+//     virtual void switcher(const SM::Base &event) override
 //     {
 //         auto &sender = event.m_sender_state;
 //         auto &type = event.m_type;
@@ -80,7 +80,7 @@
 //         // Логика переключения состояний
 //         switch (type)
 //         {
-//         case SM::Event::Type::TryAgain:
+//         case SM::Type::TryAgain:
 //             state = findState("TryAgain");
 //             if (state)
 //             {
@@ -90,7 +90,7 @@
 //             else
 //                 std::cout << "Unknown state: TryAgain\n";
 //             break;
-//         case SM::Event::Type::GotPassword:
+//         case SM::Type::GotPassword:
 //             state = findState("NewLogin");
 //             if (state)
 //             {
@@ -108,19 +108,19 @@
 
 int main()
 {
-    Scen sc;
-    std::cout << "=== Hello"
-              << "\n";
-    sc.update({});
-    sc.update({});
-    sc.update({});
-    sc.update({});
-    std::cout << "=== Hello"
-              << "\n";
-    sc.update({});
-    std::cout << "=== Hello"
-              << "\n";
-    sc.update({});
-    sc.update({});
+    // Scen sc;
+    // std::cout << "=== Hello"
+    //           << "\n";
+    // sc.update({});
+    // sc.update({});
+    // sc.update({});
+    // sc.update({});
+    // std::cout << "=== Hello"
+    //           << "\n";
+    // sc.update({});
+    // std::cout << "=== Hello"
+    //           << "\n";
+    // sc.update({});
+    // sc.update({});
     return 0;
 }
