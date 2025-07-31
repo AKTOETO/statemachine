@@ -3,6 +3,14 @@
 
 namespace States
 {
+    enum class CustomEvents
+    {
+        GotPassword
+    };
+
+    using MyState = SM::State<CustomEvents>;
+    using MyBase = SM::Events::Base<CustomEvents>;
+
     // class TryAgain : public SM::State
     // {
     //   public:
@@ -37,46 +45,42 @@ namespace States
     //     };
     // };
 
-    class RequestOldPassword : public SM::State
+    class RequestOldPassword : public MyState
     {
       public:
         RequestOldPassword()
-            : SM::State("RequestOldPassword"){};
+            : MyState("RequestOldPassword"){};
 
-        virtual SM::Events::Base init(const SM::callbackParams &prams) override
+        virtual MyBase init(const SM::callbackParams &prams) override
         {
-            // request({{"password", ""}});
-            // return {SM::Events::Type::Request, this, {{"password", ""}}};
             return SM::Events::Request{this, {{"password", ""}}};
         };
 
-        virtual SM::Events::Base update(const SM::callbackParams &prams) override
+        virtual MyBase update(const SM::callbackParams &prams) override
         {
             // если пароля нет
             if (prams.at("password").length() == 0)
-            {
-                // needToSwitch({SM::Type::TryAgain, this});
-                return SM::Events::None{this};
-            }
+                return SM::Events::TryAgain{this};
 
             // если пароль есть, нужно его проверить
             // needToSwitch({SM::Type::GotPassword, this, prams});
-            return {SM::Events::Type::None, this};
+            // return {SM::Events::Type::None, this};
+            return MyBase{SM::Events::Type::Switch, this, CustomEvents::GotPassword};
         }
     };
 
-    class CheckPassword : public SM::State
-    {
-      public:
-        CheckPassword()
-            : SM::State("CheckPassword"){};
+    // class CheckPassword : public SM::State
+    // {
+    //   public:
+    //     CheckPassword()
+    //         : SM::State("CheckPassword"){};
 
-        virtual SM::Events::Base update(const SM::callbackParams &prams) override
-        {
-            request({{"password", ""}});
-            return {SM::Events::Type::None, this};
-        }
-    };
+    //     virtual SM::Events::Base update(const SM::callbackParams &prams) override
+    //     {
+    //         request({{"password", ""}});
+    //         return {SM::Events::Type::None, this};
+    //     }
+    // };
 
 } // namespace States
 
