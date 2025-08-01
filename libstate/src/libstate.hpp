@@ -228,8 +228,6 @@ namespace SM
             m_states;
 
         // таблица переходов
-        // std::map<Events::Base<CustomEvents>, State<CustomEvents> *>
-        //     m_transfers;
         std::map<std::pair<State<CustomEvents> *, CustomEvents>,
                  State<CustomEvents> *>
             m_transfers;
@@ -245,12 +243,14 @@ namespace SM
             if (it != m_states.end())
             {
                 m_cur_state = it->second.get();
-                // transfer(m_cur_state->init({}));
+                // handleLibEvents(m_cur_state->init({}));
             }
             else
                 std::cout << "Unknown state: " << name << "\n";
         }
 
+        /// @brief Установка начального состояния
+        /// @param state Состояние
         void setStartState(State<CustomEvents> *state)
         {
             if (!state)
@@ -259,7 +259,7 @@ namespace SM
             if (it != m_states.end())
             {
                 m_cur_state = it->second.get();
-                // transfer(m_cur_state->init({}));
+                // handleLibEvents(m_cur_state->init({}));
             }
             else
                 std::cout << "Unknown state: " << state->getName() << "\n";
@@ -268,12 +268,6 @@ namespace SM
         // /// @brief Отправить запрос
         // /// @param params данные запроса
         // void request(const outsideParams &params);
-
-        /// @brief Функция обработки переходов из одного состояния в
-        /// другое. Он должен вызывать функции exit() и init() у
-        /// состояний.
-        /// @param event Событие перехода
-        virtual void transfer(const Events::Base<CustomEvents> &event){};
 
         /// @brief Добавить в сценарий новое состояние
         /// @tparam DerivedState Тип нового состояния, унаследованного
@@ -315,12 +309,17 @@ namespace SM
         {
             m_transfers[std::make_pair(first_state, custom_event)] =
                 second_state;
-            std::cout << "Added state transfer (" << first_state->getName()
-                      << ") -" << (short)custom_event << "-> ("
+            std::cout << "Added state handleLibEvents ("
+                      << first_state->getName() << ") -"
+                      << (short)custom_event << "-> ("
                       << second_state->getName() << ")\n";
             return true;
         }
 
+        /// @brief Найти состояние по имени
+        /// @param name Имя состояния
+        /// @return Если состояние существует, указатель на него, иначе
+        /// nullptr
         State<CustomEvents> *getState(const std::string &name)
         {
             auto it = m_states.find(name);
@@ -328,6 +327,57 @@ namespace SM
                 return it->second.get();
             return nullptr;
         }
+
+      private:
+        /// @brief Обработка состояний библиотеки
+        /// @param event Событие перехода
+        virtual void handleLibEvents(
+            const Events::Base<CustomEvents> &event)
+        {
+            std::cout << "Got event with type: " << (uint)event.m_type
+                      << "\n";
+            const auto &sender = event.m_sender_state;
+            const auto &sender_name =
+                sender ? sender->getName() : "unknown";
+
+            // Обработка всех библиотечных событий
+            switch (event.m_type)
+            {
+            case Events::Type::None:
+                std::cout << "Got Nothing from state: " << sender_name
+                          << "\n";
+                break;
+            case Events::Type::Request:
+                std::cout << "Got Request from state: " << sender_name
+                          << "\n";
+                // поиск перехода
+
+                break;
+            case Events::Type::Switch:
+                std::cout << "Got Switch from state: " << sender_name
+                          << "\n";
+
+                break;
+            case Events::Type::TryAgain:
+                std::cout << "Got TryAgain from state: " << sender_name
+                          << "\n";
+
+                break;
+            case Events::Type::Finish:
+                std::cout << "Got Finish from state: " << sender_name
+                          << "\n";
+
+                break;
+
+            default:
+                std::cout << "Unknown lib type: " << (uint)event.m_type
+                          << "\n";
+            }
+
+            // Выходим из текущего состояния
+
+            // Заходим в следующее состояние
+        };
 
       public:
         Scenario()
@@ -338,27 +388,30 @@ namespace SM
         virtual ~Scenario()
         {
             // if (m_cur_state)
-            //     transfer(m_cur_state->exit({}));
+            //     handleLibEvents(m_cur_state->exit({}));
         }
 
+        /// @brief Инициализация сценария, обязательно описывается в
+        /// наследниках
+        /// @param params список параметров переданных 'извне'
+        /// @return Резальтат инициализации (обычно Events::None)
         virtual Events::Base<CustomEvents> init(
-            const outsideParams &params)
-        {
-            return Events::Base<CustomEvents>(Events::Type::None);
-        };
+            const outsideParams &params) = 0;
 
-        /// @brief Передать какие-то данные в текущее состояние
+        /// @brief Обработать переданные данные 'извне'
         /// @param params Данные для передачи в состояние
         virtual Events::Base<CustomEvents> update(
             const outsideParams &params)
         {
-            // if (m_cur_state)
-            // {
-            //     std::cout << "Updating state: " <<
-            //     m_cur_state->getName()
-            //               << "\n";
-            //     transfer(m_cur_state->update(params));
-            // }
+            std::cout << "Updating Scenario\n";
+            if (m_cur_state)
+            {
+                std::cout << "Updating state: " << m_cur_state->getName()
+                          << "\n";
+                handleLibEvents(m_cur_state->update(params));
+            }
+            else
+                std::cout << "Текущее состояние не задано!\n";
             return Events::Base<CustomEvents>(Events::Type::None);
         }
     };

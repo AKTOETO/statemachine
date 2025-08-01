@@ -115,6 +115,8 @@ class UpdatePassword : public Settings::MyScenario
     virtual Settings::MyEvent init(
         const SM::outsideParams &params) override
     {
+
+        std::cout << "Инициализация сценария\n";
         // Добавляем состояния
         auto cp = addState<States::CheckPassword>();
         auto rnp = addState<States::RequestNewPassword>();
@@ -136,19 +138,6 @@ class UpdatePassword : public Settings::MyScenario
 
         return Settings::MyEvent(SM::Events::Type::None);
     }
-
-    virtual Settings::MyEvent update(
-        const SM::outsideParams &params) override
-    {
-        // if (m_cur_state)
-        // {
-        //     std::cout << "Updating state: " <<
-        //     m_cur_state->getName()
-        //               << "\n";
-        //     transfer(m_cur_state->update(params));
-        // }
-        return Settings::MyEvent(SM::Events::Type::None);
-    }
 };
 
 int main()
@@ -158,6 +147,8 @@ int main()
     // States::RequestNewPassword rn;
     // States::SavePassword sp;
     UpdatePassword up;
+    up.init({});
+    up.update({});
 
     return 0;
 }

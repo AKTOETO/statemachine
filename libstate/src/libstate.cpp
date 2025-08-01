@@ -31,7 +31,7 @@ namespace SM
     //     if (state)
     //     {
     //         m_cur_state = *state;
-    //         transfer(m_cur_state->init({}));
+    //         handleLibEvents(m_cur_state->init({}));
     //     }
     //     else
     //     {
@@ -48,7 +48,7 @@ namespace SM
     // Scenario::~Scenario()
     // {
     //     if (m_cur_state)
-    //         transfer(m_cur_state->exit({}));
+    //         handleLibEvents(m_cur_state->exit({}));
     // }
 
     // void Scenario::request(const outsideParams &params)
@@ -75,7 +75,7 @@ namespace SM
     //     if (m_cur_state)
     //     {
     //         std::cout << "Updating state: " << m_cur_state->getName() << "\n";
-    //         transfer(m_cur_state->update(params));
+    //         handleLibEvents(m_cur_state->update(params));
     //     }
     // }
 
