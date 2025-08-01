@@ -5,11 +5,16 @@ namespace States
 {
     enum class CustomEvents
     {
-        GotPassword
+        GotPassword,
+        PasswordCorrect,
+        PasswordIncorrect,
+        RequestOldPassword,
+        RequestNewPassword,
+        SavePassword,
     };
 
     using MyState = SM::State<CustomEvents>;
-    using MyBase = SM::Events::Base<CustomEvents>;
+    using MyEvent = SM::Events::Base<CustomEvents>;
 
     // class TryAgain : public SM::State
     // {
@@ -35,7 +40,8 @@ namespace States
     //     virtual SM::Base update(const SM::callbackParams &prams) override
     //     {
     //         std::cout << "Updating" << m_name << "\n";
-    //         // SM::Base ev = {.m_type = SM::Type::TryAgain, .m_sender_state = this};
+    //         // SM::Base ev = {.m_type = SM::Type::TryAgain, .m_sender_state =
+    //         this};
 
     //         SM::callbackParams param = {{"password", "true"}};
     //         request(param);
@@ -51,40 +57,86 @@ namespace States
         RequestOldPassword()
             : MyState("RequestOldPassword"){};
 
-        virtual MyBase init(const SM::callbackParams &prams) override
-        {
-            return SM::Events::Request{this, {{"password", ""}}};
-        };
+        // virtual MyEvent init(const SM::callbackParams &prams) override
+        // {
+        //     return SM::Events::Request{this, {{"password", ""}}};
+        // };
 
-        virtual MyBase update(const SM::callbackParams &prams) override
+        virtual MyEvent update(const SM::callbackParams &prams) override
         {
             // если пароля нет
-            if (prams.at("password").length() == 0)
-                return SM::Events::TryAgain{this};
+            if (prams.at("password").length() == 0 ||
+                prams.at("action") == "TryAgain")
+                return SM::Events::Request{this,
+                                           CustomEvents::RequestOldPassword};
 
             // если пароль есть, нужно его проверить
-            // needToSwitch({SM::Type::GotPassword, this, prams});
-            // return {SM::Events::Type::None, this};
-            return MyBase{SM::Events::Type::Switch, this, CustomEvents::GotPassword};
+            return SM::Events::Switch{this, CustomEvents::GotPassword, prams};
         }
     };
 
-    // class CheckPassword : public SM::State
-    // {
-    //   public:
-    //     CheckPassword()
-    //         : SM::State("CheckPassword"){};
+    class CheckPassword : public MyState
+    {
+      public:
+        CheckPassword()
+            : MyState("CheckPassword"){};
 
-    //     virtual SM::Events::Base update(const SM::callbackParams &prams) override
-    //     {
-    //         request({{"password", ""}});
-    //         return {SM::Events::Type::None, this};
-    //     }
-    // };
+        virtual MyEvent update(const SM::callbackParams &prams) override
+        {
+            if (isPassworCorrect(prams.at("password")))
+                return SM::Events::Switch{this, CustomEvents::PasswordCorrect};
+            return SM::Events::Switch{this, CustomEvents::PasswordIncorrect};
+        }
 
+      private:
+        bool isPassworCorrect(const std::string &password)
+        {
+            return password == "123";
+        }
+    };
+
+    class RequestNewPassword : public MyState
+    {
+      public:
+        RequestNewPassword()
+            : MyState("RequestNewPassword"){};
+
+        virtual MyEvent update(const SM::callbackParams &prams) override
+        {
+            if (prams.at("password").length() == 0 ||
+                prams.at("action") == "TryAgain")
+                return SM::Events::Request{this,
+                                           CustomEvents::RequestNewPassword};
+
+            return SM::Events::Switch{this, CustomEvents::GotPassword, prams};
+        }
+    };
+
+    class SavePassword : public MyState
+    {
+      public:
+        SavePassword()
+            : MyState("SavePassword"){};
+
+        virtual MyEvent update(const SM::callbackParams &prams) override
+        {
+            if (prams.at("password").length() == 0 ||
+                prams.at("action") == "TryAgain")
+                return SM::Events::Request{this,
+                                           CustomEvents::RequestNewPassword};
+
+            // return SM::Events::Switch{this, CustomEvents::GotPassword,
+            // prams};
+            return SM::Events::Request{this, CustomEvents::SavePassword, prams};
+        }
+    };
 } // namespace States
 
 int main()
 {
+    States::RequestOldPassword ro;
+    States::CheckPassword cp;
+    States::RequestNewPassword rn;
+    States::SavePassword sp;
     return 0;
 }

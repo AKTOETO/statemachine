@@ -1,13 +1,13 @@
 #ifndef LIBSTATE_HPP
 #define LIBSTATE_HPP
 
+#include <algorithm>
 #include <functional>
+#include <iostream>
 #include <list>
 #include <map>
 #include <memory>
 #include <optional>
-#include <algorithm>
-#include <iostream>
 
 // Пространство имен библиотеки состояний
 namespace SM
@@ -22,13 +22,14 @@ namespace SM
 
     namespace Events
     {
-        // Типы возможных событий
+        // Стандартные события
         enum class Type
         {
-            None,
-            Request,
-            Switch,
-            TryAgain
+            None,    // Ничего не произошло
+            Request, // Передача данных "наружу"
+            Switch,  // Переключение состояния
+            TryAgain, // Перезапуск текущего состояния,
+            Finish // Конец цепочки переключения состояний
         };
 
         // Структура события, передаваемая при желании переключиться
@@ -41,7 +42,8 @@ namespace SM
             callbackParams m_data;
 
             // Base();
-            Base(Type type, State<CustomData> *state, const callbackParams &data = {})
+            Base(Type type, State<CustomData> *state,
+                 const callbackParams &data = {})
                 : m_type(type)
                 , m_sender_state(state)
                 , m_custom_data(std::nullopt)
@@ -49,7 +51,8 @@ namespace SM
             {
             }
 
-            Base(Type type, State<CustomData> *state, const CustomData &custom_data, const callbackParams &data = {})
+            Base(Type type, State<CustomData> *state,
+                 const CustomData &custom_data, const callbackParams &data = {})
                 : m_type(type)
                 , m_sender_state(state)
                 , m_custom_data(custom_data)
@@ -67,8 +70,9 @@ namespace SM
             {
             }
 
-            Switch(State<CustomData> *state, const CustomData &custom_data, const callbackParams &data = {})
-                : Base<CustomData>(Type::Switch, state, data, custom_data)
+            Switch(State<CustomData> *state, const CustomData &custom_data,
+                   const callbackParams &data = {})
+                : Base<CustomData>(Type::Switch, state, custom_data, data)
             {
             }
         };
@@ -82,8 +86,9 @@ namespace SM
             {
             }
 
-            Request(State<CustomData> *state, const CustomData &custom_data, const callbackParams &data = {})
-                : Base<CustomData>(Type::Request, state, data, custom_data)
+            Request(State<CustomData> *state, const CustomData &custom_data,
+                    const callbackParams &data = {})
+                : Base<CustomData>(Type::Request, state, custom_data, data)
             {
             }
         };
@@ -97,8 +102,25 @@ namespace SM
             {
             }
 
-            TryAgain(State<CustomData> *state, const CustomData &custom_data, const callbackParams &data = {})
-                : Base<CustomData>(Type::TryAgain, state, data, custom_data)
+            TryAgain(State<CustomData> *state, const CustomData &custom_data,
+                     const callbackParams &data = {})
+                : Base<CustomData>(Type::TryAgain, state, custom_data, data)
+            {
+            }
+        };
+
+        // Конец вветки переключения состояний
+        template <typename CustomData = void>
+        struct Finish : public Base<CustomData>
+        {
+            Finish(State<CustomData> *state, const callbackParams &data = {})
+                : Base<CustomData>(Type::Finish, state, data)
+            {
+            }
+
+            Finish(State<CustomData> *state, const CustomData &custom_data,
+                   const callbackParams &data = {})
+                : Base<CustomData>(Type::Finish, state, custom_data, data)
             {
             }
         };
@@ -112,8 +134,9 @@ namespace SM
             {
             }
 
-            None(State<CustomData> *state, const CustomData &custom_data, const callbackParams &data = {})
-                : Base<CustomData>(Type::None, state, data, custom_data)
+            None(State<CustomData> *state, const CustomData &custom_data,
+                 const callbackParams &data = {})
+                : Base<CustomData>(Type::None, state, custom_data, data)
             {
             }
         };
@@ -189,13 +212,17 @@ namespace SM
 
         /// @brief Найти загруженное состояние
         /// @param name имя состояния
-        /// @return Если состояние есть `std::shared_ptr<State>`, иначе `std::nullopt`
-        std::optional<std::shared_ptr<State<CustomData>>> findState(const std::string &name)
+        /// @return Если состояние есть `std::shared_ptr<State>`, иначе
+        /// `std::nullopt`
+        std::optional<std::shared_ptr<State<CustomData>>> findState(
+            const std::string &name)
         {
-            auto found = std::find_if(m_states.begin(), m_states.end(),
-                                      [&name](const std::shared_ptr<State<CustomData>> &state)
-                                      { return state->getName() == name; });
-            return (found == m_states.end()) ? std::nullopt : std::make_optional(*found);
+            auto found = std::find_if(
+                m_states.begin(), m_states.end(),
+                [&name](const std::shared_ptr<State<CustomData>> &state)
+                { return state->getName() == name; });
+            return (found == m_states.end()) ? std::nullopt
+                                             : std::make_optional(*found);
         }
 
         /// @brief Установить загруженное состояние
@@ -242,7 +269,8 @@ namespace SM
                 if (el->getName() == state->getName())
                     return;
             }
-            //state->setRequester([this](const callbackParams &params) { request(params); });
+            // state->setRequester([this](const callbackParams &params) {
+            // request(params); });
             m_states.push_back(state);
         }
 
@@ -252,7 +280,8 @@ namespace SM
         {
             if (m_cur_state)
             {
-                std::cout << "Updating state: " << m_cur_state->getName() << "\n";
+                std::cout << "Updating state: " << m_cur_state->getName()
+                          << "\n";
                 transfer(m_cur_state->update(params));
             }
         }

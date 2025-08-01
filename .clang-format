@@ -11,3 +11,7 @@ PenaltyBreakTemplateDeclaration: 0
 #AlwaysBreakAfterDefinitionReturnType: All
 AlwaysBreakTemplateDeclarations: true 
 BreakBeforeBraces: Allman
+ColumnLimit: 80
+
+
+AlignTrailingComments: true
