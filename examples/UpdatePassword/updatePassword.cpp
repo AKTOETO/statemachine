@@ -1,9 +1,13 @@
 #include <iostream>
 #include <libstate.hpp>
 
-namespace States
+namespace Settings
 {
-    enum class CustomEvents
+    enum class CustomNames
+    {
+    };
+
+    enum class CustomEvents : short
     {
         GotPassword,
         PasswordCorrect,
@@ -15,77 +19,52 @@ namespace States
 
     using MyState = SM::State<CustomEvents>;
     using MyEvent = SM::Events::Base<CustomEvents>;
+    using MyScenario = SM::Scenario<CustomEvents>;
 
-    // class TryAgain : public SM::State
-    // {
-    //   public:
-    //     TryAgain()
-    //         : SM::State("TryAgain"){};
+} // namespace Settings
 
-    //     virtual SM::Base update(const SM::callbackParams &prams) override
-    //     {
-    //         std::cout << "Updating" << m_name << "\n";
-    //         return {SM::Type::GotPassword, this};
-
-    //         //needToSwitch(ev);
-    //     };
-    // };
-
-    // class NewLogin : public SM::State
-    // {
-    //   public:
-    //     NewLogin()
-    //         : SM::State("NewLogin"){};
-
-    //     virtual SM::Base update(const SM::callbackParams &prams) override
-    //     {
-    //         std::cout << "Updating" << m_name << "\n";
-    //         // SM::Base ev = {.m_type = SM::Type::TryAgain, .m_sender_state =
-    //         this};
-
-    //         SM::callbackParams param = {{"password", "true"}};
-    //         request(param);
-
-    //         // needToSwitch(ev);
-    //         return {SM::Type::None, this};
-    //     };
-    // };
-
-    class RequestOldPassword : public MyState
+namespace States
+{
+    class RequestOldPassword : public Settings::MyState
     {
       public:
         RequestOldPassword()
-            : MyState("RequestOldPassword"){};
+            : Settings::MyState("RequestOldPassword"){};
 
-        // virtual MyEvent init(const SM::callbackParams &prams) override
+        // virtual MyEvent init(const SM::outsideParams &prams) override
         // {
         //     return SM::Events::Request{this, {{"password", ""}}};
         // };
 
-        virtual MyEvent update(const SM::callbackParams &prams) override
+        virtual Settings::MyEvent update(
+            const SM::outsideParams &prams) override
         {
             // если пароля нет
             if (prams.at("password").length() == 0 ||
                 prams.at("action") == "TryAgain")
-                return SM::Events::Request{this,
-                                           CustomEvents::RequestOldPassword};
+                return SM::Events::Request{
+                    this, Settings::CustomEvents::RequestOldPassword};
 
             // если пароль есть, нужно его проверить
-            return SM::Events::Switch{this, CustomEvents::GotPassword, prams};
+            return SM::Events::Switch{this, Settings::CustomEvents::GotPassword,
+                                      prams};
         }
     };
 
-    class CheckPassword : public MyState
+    class CheckPassword : public Settings::MyState
     {
       public:
         CheckPassword()
-            : MyState("CheckPassword"){};
+            : Settings::MyState("CheckPassword"){};
 
-        virtual MyEvent update(const SM::callbackParams &prams) override
+        virtual Settings::MyEvent update(
+            const SM::outsideParams &prams) override
         {
             if (isPassworCorrect(prams.at("password")))
-                return SM::Events::Switch{this, CustomEvents::PasswordCorrect};
-            return SM::Events::Switch{this, CustomEvents::PasswordIncorrect};
+                return SM::Events::Switch{
+                    this, Settings::CustomEvents::PasswordCorrect};
+            return SM::Events::Switch{
+                this, Settings::CustomEvents::PasswordIncorrect};
         }
 
       private:
@@ -95,48 +74,85 @@ namespace States
         }
     };
 
-    class RequestNewPassword : public MyState
+    class RequestNewPassword : public Settings::MyState
     {
       public:
         RequestNewPassword()
-            : MyState("RequestNewPassword"){};
+            : Settings::MyState("RequestNewPassword"){};
 
-        virtual MyEvent update(const SM::callbackParams &prams) override
+        virtual Settings::MyEvent update(
+            const SM::outsideParams &prams) override
         {
             if (prams.at("password").length() == 0 ||
                 prams.at("action") == "TryAgain")
-                return SM::Events::Request{this,
-                                           CustomEvents::RequestNewPassword};
+                return SM::Events::Request{
+                    this, Settings::CustomEvents::RequestNewPassword};
 
-            return SM::Events::Switch{this, CustomEvents::GotPassword, prams};
+            return SM::Events::Switch{this, Settings::CustomEvents::GotPassword,
+                                      prams};
         }
     };
 
-    class SavePassword : public MyState
+    class SavePassword : public Settings::MyState
     {
       public:
         SavePassword()
-            : MyState("SavePassword"){};
+            : Settings::MyState("SavePassword"){};
 
-        virtual MyEvent update(const SM::callbackParams &prams) override
+        virtual Settings::MyEvent update(
+            const SM::outsideParams &prams) override
         {
             if (prams.at("password").length() == 0 ||
                 prams.at("action") == "TryAgain")
-                return SM::Events::Request{this,
-                                           CustomEvents::RequestNewPassword};
+                return SM::Events::Request{
+                    this, Settings::CustomEvents::RequestNewPassword};
 
             // return SM::Events::Switch{this, CustomEvents::GotPassword,
             // prams};
-            return SM::Events::Request{this, CustomEvents::SavePassword, prams};
+            return SM::Events::Request{
+                this, Settings::CustomEvents::SavePassword, prams};
         }
     };
 } // namespace States
 
+class UpdatePassword : public Settings::MyScenario
+{
+  public:
+    UpdatePassword()
+    {
+    }
+
+    virtual Settings::MyEvent init(const SM::outsideParams &params) override
+    {
+        auto cp = addState<States::CheckPassword>();
+        auto rnp = addState<States::RequestNewPassword>();
+        auto rop = addState<States::RequestOldPassword>();
+        auto sp = addState<States::SavePassword>();
+
+        return Settings::MyEvent(SM::Events::Type::None);
+        //return SM::Events::None{nullptr};
+    }
+
+    virtual Settings::MyEvent update(const SM::outsideParams &params) override
+    {
+        // if (m_cur_state)
+        // {
+        //     std::cout << "Updating state: " << m_cur_state->getName()
+        //               << "\n";
+        //     transfer(m_cur_state->update(params));
+        // }
+        return Settings::MyEvent(SM::Events::Type::None);
+        // return SM::Events::None{nullptr};
+    }
+};
+
 int main()
 {
-    States::RequestOldPassword ro;
-    States::CheckPassword cp;
-    States::RequestNewPassword rn;
-    States::SavePassword sp;
+    // States::RequestOldPassword ro;
+    // States::CheckPassword cp;
+    // States::RequestNewPassword rn;
+    // States::SavePassword sp;
+    UpdatePassword up;
+
     return 0;
 }

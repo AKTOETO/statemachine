@@ -8,16 +8,15 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <unordered_map>
 
 // Пространство имен библиотеки состояний
 namespace SM
 {
-    // параметры функции обратного вызова для состояния
-    using callbackParams = std::map<std::string, std::string>;
-    // тип функции обратного вызова
-    using callbackType = std::function<void(callbackParams)>;
+    // параметры полученные извне
+    using outsideParams = std::map<std::string, std::string>;
 
-    template <typename CustomData>
+    template <typename CustomEvents>
     class State;
 
     namespace Events
@@ -29,21 +28,21 @@ namespace SM
             Request, // Передача данных "наружу"
             Switch,  // Переключение состояния
             TryAgain, // Перезапуск текущего состояния,
-            Finish // Конец цепочки переключения состояний
+            Finish, // Конец цепочки переключения состояний
         };
 
         // Структура события, передаваемая при желании переключиться
-        template <typename CustomData = void>
+        template <typename CustomEvents = void>
         struct Base
         {
             Type m_type;
-            State<CustomData> *m_sender_state = nullptr;
-            std::optional<CustomData> m_custom_data;
-            callbackParams m_data;
+            std::optional<CustomEvents> m_custom_data;
+            State<CustomEvents> *m_sender_state = nullptr;
+            outsideParams m_data;
 
             // Base();
-            Base(Type type, State<CustomData> *state,
-                 const callbackParams &data = {})
+            Base(Type type, State<CustomEvents> *state = nullptr,
+                 const outsideParams &data = {})
                 : m_type(type)
                 , m_sender_state(state)
                 , m_custom_data(std::nullopt)
@@ -51,92 +50,102 @@ namespace SM
             {
             }
 
-            Base(Type type, State<CustomData> *state,
-                 const CustomData &custom_data, const callbackParams &data = {})
+            Base(Type type, State<CustomEvents> *state,
+                 const CustomEvents &custom_event,
+                 const outsideParams &data = {})
                 : m_type(type)
                 , m_sender_state(state)
-                , m_custom_data(custom_data)
+                , m_custom_data(custom_event)
                 , m_data(data)
             {
+            }
+            bool operator==(const Base &other) const
+            {
+                return m_type == other.m_type &&
+                       m_custom_data == other.m_custom_data &&
+                       m_sender_state->getName() ==
+                           other.m_sender_state->getName();
             }
         };
 
         // Тип переключения на другое состояние
-        template <typename CustomData = void>
-        struct Switch : public Base<CustomData>
+        template <typename CustomEvents = void>
+        struct Switch : public Base<CustomEvents>
         {
-            Switch(State<CustomData> *state, const callbackParams &data = {})
-                : Base<CustomData>(Type::Switch, state, data)
+            Switch(State<CustomEvents> *state, const outsideParams &data = {})
+                : Base<CustomEvents>(Type::Switch, state, data)
             {
             }
 
-            Switch(State<CustomData> *state, const CustomData &custom_data,
-                   const callbackParams &data = {})
-                : Base<CustomData>(Type::Switch, state, custom_data, data)
+            Switch(State<CustomEvents> *state, const CustomEvents &custom_event,
+                   const outsideParams &data = {})
+                : Base<CustomEvents>(Type::Switch, state, custom_event, data)
             {
             }
         };
 
         // Тип запроса, который отправляется куда-то
-        template <typename CustomData = void>
-        struct Request : public Base<CustomData>
+        template <typename CustomEvents = void>
+        struct Request : public Base<CustomEvents>
         {
-            Request(State<CustomData> *state, const callbackParams &data = {})
-                : Base<CustomData>(Type::Request, state, data)
+            Request(State<CustomEvents> *state, const outsideParams &data = {})
+                : Base<CustomEvents>(Type::Request, state, data)
             {
             }
 
-            Request(State<CustomData> *state, const CustomData &custom_data,
-                    const callbackParams &data = {})
-                : Base<CustomData>(Type::Request, state, custom_data, data)
+            Request(State<CustomEvents> *state,
+                    const CustomEvents &custom_event,
+                    const outsideParams &data = {})
+                : Base<CustomEvents>(Type::Request, state, custom_event, data)
             {
             }
         };
 
         // Перезапуск текущего состояния
-        template <typename CustomData = void>
-        struct TryAgain : public Base<CustomData>
+        template <typename CustomEvents = void>
+        struct TryAgain : public Base<CustomEvents>
         {
-            TryAgain(State<CustomData> *state, const callbackParams &data = {})
-                : Base<CustomData>(Type::TryAgain, state, data)
+            TryAgain(State<CustomEvents> *state, const outsideParams &data = {})
+                : Base<CustomEvents>(Type::TryAgain, state, data)
             {
             }
 
-            TryAgain(State<CustomData> *state, const CustomData &custom_data,
-                     const callbackParams &data = {})
-                : Base<CustomData>(Type::TryAgain, state, custom_data, data)
+            TryAgain(State<CustomEvents> *state,
+                     const CustomEvents &custom_event,
+                     const outsideParams &data = {})
+                : Base<CustomEvents>(Type::TryAgain, state, custom_event, data)
             {
             }
         };
 
         // Конец вветки переключения состояний
-        template <typename CustomData = void>
-        struct Finish : public Base<CustomData>
+        template <typename CustomEvents = void>
+        struct Finish : public Base<CustomEvents>
         {
-            Finish(State<CustomData> *state, const callbackParams &data = {})
-                : Base<CustomData>(Type::Finish, state, data)
+            Finish(State<CustomEvents> *state, const outsideParams &data = {})
+                : Base<CustomEvents>(Type::Finish, state, data)
             {
             }
 
-            Finish(State<CustomData> *state, const CustomData &custom_data,
-                   const callbackParams &data = {})
-                : Base<CustomData>(Type::Finish, state, custom_data, data)
+            Finish(State<CustomEvents> *state, const CustomEvents &custom_event,
+                   const outsideParams &data = {})
+                : Base<CustomEvents>(Type::Finish, state, custom_event, data)
             {
             }
         };
 
         // Никакого события не произошло
-        template <typename CustomData = void>
-        struct None : public Base<CustomData>
+        template <typename CustomEvents = void>
+        struct None : public Base<CustomEvents>
         {
-            None(State<CustomData> *state, const callbackParams &data = {})
-                : Base<CustomData>(Type::None, state, data)
+            None(State<CustomEvents> *state, const outsideParams &data = {})
+                : Base<CustomEvents>(Type::None, state, data)
             {
             }
 
-            None(State<CustomData> *state, const CustomData &custom_data,
-                 const callbackParams &data = {})
-                : Base<CustomData>(Type::None, state, custom_data, data)
+            None(State<CustomEvents> *state, const CustomEvents &custom_event,
+                 const outsideParams &data = {})
+                : Base<CustomEvents>(Type::None, state, custom_event, data)
             {
             }
         };
@@ -144,7 +153,7 @@ namespace SM
     } // namespace Events
 
     // Структура описывает состояние в текущем сценарии
-    template <typename CustomData = void>
+    template <typename CustomEvents = void>
     class State
     {
       public:
@@ -163,23 +172,23 @@ namespace SM
          *
          * @param params Параметры для функции инициализации текущего состояния
          */
-        virtual Events::Base<CustomData> init(const callbackParams &params)
+        virtual Events::Base<CustomEvents> init(const outsideParams &params)
         {
-            return Events::Base<CustomData>{Events::Type::None, this};
+            return Events::Base<CustomEvents>{Events::Type::None, this};
         };
 
         /// @brief Обновление состояния с учетом переданных данных
         /// @param params данные
-        virtual Events::Base<CustomData> update(const callbackParams &params)
+        virtual Events::Base<CustomEvents> update(const outsideParams &params)
         {
-            return Events::Base<CustomData>{Events::Type::None, this};
+            return Events::Base<CustomEvents>{Events::Type::None, this};
         };
 
         /// @brief Выход из текущего состояния
         /// @param params параметры для выхода
-        virtual Events::Base<CustomData> exit(const callbackParams &params)
+        virtual Events::Base<CustomEvents> exit(const outsideParams &params)
         {
-            return Events::Base<CustomData>{Events::Type::None, this};
+            return Events::Base<CustomEvents>{Events::Type::None, this};
         };
 
         /// @brief Получить имя состояния
@@ -194,46 +203,28 @@ namespace SM
     };
 
     // Сценарий взаимодействия состояний
-    template <typename CustomData = void>
+    template <typename CustomEvents = void>
     class Scenario
     {
       protected:
-        std::shared_ptr<State<CustomData>> m_cur_state = nullptr;
-        std::list<std::shared_ptr<State<CustomData>>> m_states;
-        std::function<void(const callbackParams &params)> m_requester;
+        // Список зарегистрированных состояний
+        std::map<std::string, std::unique_ptr<State<CustomEvents>>> m_states;
 
-        /**
-         * @brief Функция переключения состояния. Реализуется в каждом сценарии
-         * своя. Он должен вызывать функции exit() и init() у состояний.
-         *
-         * @param event событие переключения
-         */
-        virtual void switcher(const Events::Base<CustomData> &event) = 0;
+        // таблица переходов
+        std::map<Events::Base<CustomEvents>, State<CustomEvents> *> m_transfers;
 
-        /// @brief Найти загруженное состояние
-        /// @param name имя состояния
-        /// @return Если состояние есть `std::shared_ptr<State>`, иначе
-        /// `std::nullopt`
-        std::optional<std::shared_ptr<State<CustomData>>> findState(
-            const std::string &name)
-        {
-            auto found = std::find_if(
-                m_states.begin(), m_states.end(),
-                [&name](const std::shared_ptr<State<CustomData>> &state)
-                { return state->getName() == name; });
-            return (found == m_states.end()) ? std::nullopt
-                                             : std::make_optional(*found);
-        }
+        // Текущее состояние
+        State<CustomEvents> *m_cur_state;
 
         /// @brief Установить загруженное состояние
         /// @param name имя состояния
         void setStartState(const std::string &name)
         {
-            auto state = findState(name);
-            if (state)
+            auto it = m_states.find(name);
+            if (it != m_states.end())
             {
-                m_cur_state = *state;
-                transfer(m_cur_state->init({}));
+                m_cur_state = it->second.get();
+                // transfer(m_cur_state->init({}));
             }
             else
                 std::cout << "Unknown state: " << name << "\n";
@@ -241,49 +232,81 @@ namespace SM
 
         // /// @brief Отправить запрос
         // /// @param params данные запроса
-        // void request(const callbackParams &params);
+        // void request(const outsideParams &params);
 
-        /// @brief Функция обработки переходов из одного состояния в другое
+        /// @brief Функция обработки переходов из одного состояния в другое. Он
+        /// должен вызывать функции exit() и init() у состояний.
         /// @param event Событие перехода
-        virtual void transfer(const Events::Base<CustomData> &event){};
-
-      public:
-        Scenario()
-            : m_requester(nullptr)
-            , m_cur_state(nullptr)
-        {
-        }
-        virtual ~Scenario()
-        {
-            if (m_cur_state)
-                transfer(m_cur_state->exit({}));
-        }
+        virtual void transfer(const Events::Base<CustomEvents> &event){};
 
         /// @brief Добавить состояние в сценарий
         /// @param state само состояние
-        void addState(std::shared_ptr<State<CustomData>> state)
+
+        /// @brief Добавить в сценарий новое состояние
+        /// @tparam DerivedState Тип нового состояния, унаследованного от State
+        /// @tparam ...Args Типы параметров конструктора
+        /// @param ...args Параметры конструктора нового состояния
+        template <typename DerivedState, typename... Args>
+        DerivedState *addState(Args &&...args)
         {
-            std::cout << "Adding state: " << state->getName() << '\n';
-            for (auto &el : m_states)
-            {
-                if (el->getName() == state->getName())
-                    return;
-            }
-            // state->setRequester([this](const callbackParams &params) {
-            // request(params); });
-            m_states.push_back(state);
+            auto state =
+                std::make_unique<DerivedState>(std::forward<Args>(args)...);
+            const std::string &name = state->getName();
+
+            if (m_states.count(name) > 0)
+                return nullptr;
+
+            m_states[state->getName()] = std::move(state);
+            return state.get();
+
+            // std::cout << "Adding state: " << state->getName() << '\n';
+            // for (auto &el : m_states)
+            // {
+            //     if (el->getName() == state->getName())
+            //         return;
+            // }
+            // // state->setRequester([this](const outsideParams &params) {
+            // // request(params); });
+            // // m_states.emplace_back(std::move(state));
+            // m_states.emplace_back(state);
         }
+
+        State<CustomEvents> *getState(const std::string &name)
+        {
+            auto it = m_states.find(name);
+            if (it != m_states.end())
+                return it->second.get();
+            return nullptr;
+        }
+
+      public:
+        Scenario()
+            : m_cur_state(nullptr)
+        {
+        }
+
+        virtual ~Scenario()
+        {
+            // if (m_cur_state)
+            //     transfer(m_cur_state->exit({}));
+        }
+
+        virtual Events::Base<CustomEvents> init(const outsideParams &params)
+        {
+            return Events::Base<CustomEvents>(Events::Type::None);
+        };
 
         /// @brief Передать какие-то данные в текущее состояние
         /// @param params Данные для передачи в состояние
-        void update(const callbackParams &params)
+        virtual Events::Base<CustomEvents> update(const outsideParams &params)
         {
-            if (m_cur_state)
-            {
-                std::cout << "Updating state: " << m_cur_state->getName()
-                          << "\n";
-                transfer(m_cur_state->update(params));
-            }
+            // if (m_cur_state)
+            // {
+            //     std::cout << "Updating state: " << m_cur_state->getName()
+            //               << "\n";
+            //     transfer(m_cur_state->update(params));
+            // }
+            return Events::Base<CustomEvents>(Events::Type::None);
         }
     };
 } // namespace SM

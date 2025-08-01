@@ -51,7 +51,7 @@ namespace SM
     //         transfer(m_cur_state->exit({}));
     // }
 
-    // void Scenario::request(const callbackParams &params)
+    // void Scenario::request(const outsideParams &params)
     // {
     //     std::cout << "Scenario::Reqesting\n";
     //     if (m_requester)
@@ -66,11 +66,11 @@ namespace SM
     //         if (el->getName() == state->getName())
     //             return;
     //     }
-    //     state->setRequester([this](const callbackParams &params) { request(params); });
+    //     state->setRequester([this](const outsideParams &params) { request(params); });
     //     m_states.push_back(state);
     // }
 
-    // void Scenario::update(const callbackParams &params)
+    // void Scenario::update(const outsideParams &params)
     // {
     //     if (m_cur_state)
     //     {
@@ -81,27 +81,27 @@ namespace SM
 
     namespace Events
     {
-        // template <typename CustomData>
-        // Base::Base(Type type, State *state, const callbackParams &data)
+        // template <typename CustomEvents>
+        // Base::Base(Type type, State *state, const outsideParams &data)
         //     : m_type(type)
         //     , m_sender_state(state)
         //     , m_data(data)
         //     , m_custom_data(std::nullopt)
         // {
         // }
-        // Switch::Switch(State *state, const callbackParams &data)
+        // Switch::Switch(State *state, const outsideParams &data)
         //     : Base(Type::Switch, state, data)
         // {
         // }
-        // None::None(State *state, const callbackParams &data)
+        // None::None(State *state, const outsideParams &data)
         //     : Base(Type::None, state, data)
         // {
         // }
-        // Request::Request(State *state, const callbackParams &data)
+        // Request::Request(State *state, const outsideParams &data)
         //     : Base(Type::Request, state, data)
         // {
         // }
-        // TryAgain::TryAgain(State *state, const callbackParams &data)
+        // TryAgain::TryAgain(State *state, const outsideParams &data)
         //     : Base(Type::TryAgain, state, data)
         // {
         // }

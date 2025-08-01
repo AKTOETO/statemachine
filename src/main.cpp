@@ -20,7 +20,7 @@
 //         TryAgain()
 //             : SM::State("TryAgain"){};
 
-//         virtual void update(const callbackParams &prams) override
+//         virtual void update(const outsideParams &prams) override
 //         {
 //             std::cout << "Updating" << m_name << "\n";
 //             SM::Base ev {SM::Type::GotPassword, this};
@@ -35,12 +35,12 @@
 //         NewLogin()
 //             : SM::State("NewLogin"){};
 
-//         virtual void update(const callbackParams &prams) override
+//         virtual void update(const outsideParams &prams) override
 //         {
 //             std::cout << "Updating" << m_name << "\n";
 //             SM::Base ev {SM::Type::TryAgain, this};
 
-//             SM::State::callbackParams param = {{"password", "true"}};
+//             SM::State::outsideParams param = {{"password", "true"}};
 //             request(param);
 
 //             needToSwitch(ev);
@@ -53,7 +53,7 @@
 //         RequestPassword()
 //             : SM::State("RequestPassword"){};
 
-//         virtual void update(const callbackParams &prams) override
+//         virtual void update(const outsideParams &prams) override
 //         {
 //             //request()
 //         }
