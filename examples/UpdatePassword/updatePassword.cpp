@@ -10,11 +10,11 @@ namespace Settings
     enum class CustomEvents : short
     {
         GotPassword,
-        PasswordCorrect,
-        PasswordIncorrect,
-        RequestOldPassword,
-        RequestNewPassword,
+        PasswordIsCorrect,
+        PasswordIsIncorrect,
+        PasswordIsEmpty,
         SavePassword,
+        TryAgain,
     };
 
     using MyState = SM::State<CustomEvents>;
@@ -31,11 +31,6 @@ namespace States
         RequestOldPassword()
             : Settings::MyState("RequestOldPassword"){};
 
-        // virtual MyEvent init(const SM::outsideParams &prams) override
-        // {
-        //     return SM::Events::Request{this, {{"password", ""}}};
-        // };
-
         virtual Settings::MyEvent update(
             const SM::outsideParams &prams) override
         {
@@ -43,11 +38,11 @@ namespace States
             if (prams.at("password").length() == 0 ||
                 prams.at("action") == "TryAgain")
                 return SM::Events::Request{
-                    this, Settings::CustomEvents::RequestOldPassword};
+                    this, Settings::CustomEvents::TryAgain};
 
             // если пароль есть, нужно его проверить
-            return SM::Events::Switch{this, Settings::CustomEvents::GotPassword,
-                                      prams};
+            return SM::Events::Switch{
+                this, Settings::CustomEvents::GotPassword, prams};
         }
     };
 
@@ -62,9 +57,10 @@ namespace States
         {
             if (isPassworCorrect(prams.at("password")))
                 return SM::Events::Switch{
-                    this, Settings::CustomEvents::PasswordCorrect};
+                    this, Settings::CustomEvents::PasswordIsCorrect};
+
             return SM::Events::Switch{
-                this, Settings::CustomEvents::PasswordIncorrect};
+                this, Settings::CustomEvents::PasswordIsIncorrect};
         }
 
       private:
@@ -86,10 +82,10 @@ namespace States
             if (prams.at("password").length() == 0 ||
                 prams.at("action") == "TryAgain")
                 return SM::Events::Request{
-                    this, Settings::CustomEvents::RequestNewPassword};
+                    this, Settings::CustomEvents::TryAgain};
 
-            return SM::Events::Switch{this, Settings::CustomEvents::GotPassword,
-                                      prams};
+            return SM::Events::Switch{
+                this, Settings::CustomEvents::GotPassword, prams};
         }
     };
 
@@ -105,12 +101,10 @@ namespace States
             if (prams.at("password").length() == 0 ||
                 prams.at("action") == "TryAgain")
                 return SM::Events::Request{
-                    this, Settings::CustomEvents::RequestNewPassword};
+                    this, Settings::CustomEvents::PasswordIsEmpty};
 
-            // return SM::Events::Switch{this, CustomEvents::GotPassword,
-            // prams};
             return SM::Events::Request{
-                this, Settings::CustomEvents::SavePassword, prams};
+                this, Settings::CustomEvents::PasswordIsCorrect, prams};
         }
     };
 } // namespace States
@@ -118,31 +112,42 @@ namespace States
 class UpdatePassword : public Settings::MyScenario
 {
   public:
-    UpdatePassword()
+    virtual Settings::MyEvent init(
+        const SM::outsideParams &params) override
     {
-    }
-
-    virtual Settings::MyEvent init(const SM::outsideParams &params) override
-    {
+        // Добавляем состояния
         auto cp = addState<States::CheckPassword>();
         auto rnp = addState<States::RequestNewPassword>();
         auto rop = addState<States::RequestOldPassword>();
         auto sp = addState<States::SavePassword>();
 
+        // Добавляем переходы между состояниями
+        addTransfer(rop, cp, Settings::CustomEvents::GotPassword);
+        addTransfer(rop, rop, Settings::CustomEvents::TryAgain);
+        addTransfer(cp, rop, Settings::CustomEvents::PasswordIsIncorrect);
+        addTransfer(cp, rnp, Settings::CustomEvents::PasswordIsCorrect);
+        addTransfer(rnp, rnp, Settings::CustomEvents::TryAgain);
+        addTransfer(rnp, sp, Settings::CustomEvents::GotPassword);
+        addTransfer(sp, rnp, Settings::CustomEvents::PasswordIsEmpty);
+
+        // Установка граничных состояний
+        setStartState(rop);
+        // setFinishState(sp);
+
         return Settings::MyEvent(SM::Events::Type::None);
-        //return SM::Events::None{nullptr};
     }
 
-    virtual Settings::MyEvent update(const SM::outsideParams &params) override
+    virtual Settings::MyEvent update(
+        const SM::outsideParams &params) override
     {
         // if (m_cur_state)
         // {
-        //     std::cout << "Updating state: " << m_cur_state->getName()
+        //     std::cout << "Updating state: " <<
+        //     m_cur_state->getName()
         //               << "\n";
         //     transfer(m_cur_state->update(params));
         // }
         return Settings::MyEvent(SM::Events::Type::None);
-        // return SM::Events::None{nullptr};
     }
 };
 

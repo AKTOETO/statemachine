@@ -72,14 +72,17 @@ namespace SM
         template <typename CustomEvents = void>
         struct Switch : public Base<CustomEvents>
         {
-            Switch(State<CustomEvents> *state, const outsideParams &data = {})
+            Switch(State<CustomEvents> *state,
+                   const outsideParams &data = {})
                 : Base<CustomEvents>(Type::Switch, state, data)
             {
             }
 
-            Switch(State<CustomEvents> *state, const CustomEvents &custom_event,
+            Switch(State<CustomEvents> *state,
+                   const CustomEvents &custom_event,
                    const outsideParams &data = {})
-                : Base<CustomEvents>(Type::Switch, state, custom_event, data)
+                : Base<CustomEvents>(Type::Switch, state, custom_event,
+                                     data)
             {
             }
         };
@@ -88,7 +91,8 @@ namespace SM
         template <typename CustomEvents = void>
         struct Request : public Base<CustomEvents>
         {
-            Request(State<CustomEvents> *state, const outsideParams &data = {})
+            Request(State<CustomEvents> *state,
+                    const outsideParams &data = {})
                 : Base<CustomEvents>(Type::Request, state, data)
             {
             }
@@ -96,7 +100,8 @@ namespace SM
             Request(State<CustomEvents> *state,
                     const CustomEvents &custom_event,
                     const outsideParams &data = {})
-                : Base<CustomEvents>(Type::Request, state, custom_event, data)
+                : Base<CustomEvents>(Type::Request, state, custom_event,
+                                     data)
             {
             }
         };
@@ -105,7 +110,8 @@ namespace SM
         template <typename CustomEvents = void>
         struct TryAgain : public Base<CustomEvents>
         {
-            TryAgain(State<CustomEvents> *state, const outsideParams &data = {})
+            TryAgain(State<CustomEvents> *state,
+                     const outsideParams &data = {})
                 : Base<CustomEvents>(Type::TryAgain, state, data)
             {
             }
@@ -113,7 +119,8 @@ namespace SM
             TryAgain(State<CustomEvents> *state,
                      const CustomEvents &custom_event,
                      const outsideParams &data = {})
-                : Base<CustomEvents>(Type::TryAgain, state, custom_event, data)
+                : Base<CustomEvents>(Type::TryAgain, state, custom_event,
+                                     data)
             {
             }
         };
@@ -122,14 +129,17 @@ namespace SM
         template <typename CustomEvents = void>
         struct Finish : public Base<CustomEvents>
         {
-            Finish(State<CustomEvents> *state, const outsideParams &data = {})
+            Finish(State<CustomEvents> *state,
+                   const outsideParams &data = {})
                 : Base<CustomEvents>(Type::Finish, state, data)
             {
             }
 
-            Finish(State<CustomEvents> *state, const CustomEvents &custom_event,
+            Finish(State<CustomEvents> *state,
+                   const CustomEvents &custom_event,
                    const outsideParams &data = {})
-                : Base<CustomEvents>(Type::Finish, state, custom_event, data)
+                : Base<CustomEvents>(Type::Finish, state, custom_event,
+                                     data)
             {
             }
         };
@@ -138,12 +148,14 @@ namespace SM
         template <typename CustomEvents = void>
         struct None : public Base<CustomEvents>
         {
-            None(State<CustomEvents> *state, const outsideParams &data = {})
+            None(State<CustomEvents> *state,
+                 const outsideParams &data = {})
                 : Base<CustomEvents>(Type::None, state, data)
             {
             }
 
-            None(State<CustomEvents> *state, const CustomEvents &custom_event,
+            None(State<CustomEvents> *state,
+                 const CustomEvents &custom_event,
                  const outsideParams &data = {})
                 : Base<CustomEvents>(Type::None, state, custom_event, data)
             {
@@ -167,26 +179,30 @@ namespace SM
         }
 
         /**
-         * @brief Функция запуска состояния. Вызывается при переходе в это
-         * состояние.
+         * @brief Функция запуска состояния. Вызывается при переходе в
+         * это состояние.
          *
-         * @param params Параметры для функции инициализации текущего состояния
+         * @param params Параметры для функции инициализации текущего
+         * состояния
          */
-        virtual Events::Base<CustomEvents> init(const outsideParams &params)
+        virtual Events::Base<CustomEvents> init(
+            const outsideParams &params)
         {
             return Events::Base<CustomEvents>{Events::Type::None, this};
         };
 
         /// @brief Обновление состояния с учетом переданных данных
         /// @param params данные
-        virtual Events::Base<CustomEvents> update(const outsideParams &params)
+        virtual Events::Base<CustomEvents> update(
+            const outsideParams &params)
         {
             return Events::Base<CustomEvents>{Events::Type::None, this};
         };
 
         /// @brief Выход из текущего состояния
         /// @param params параметры для выхода
-        virtual Events::Base<CustomEvents> exit(const outsideParams &params)
+        virtual Events::Base<CustomEvents> exit(
+            const outsideParams &params)
         {
             return Events::Base<CustomEvents>{Events::Type::None, this};
         };
@@ -208,10 +224,15 @@ namespace SM
     {
       protected:
         // Список зарегистрированных состояний
-        std::map<std::string, std::unique_ptr<State<CustomEvents>>> m_states;
+        std::map<std::string, std::unique_ptr<State<CustomEvents>>>
+            m_states;
 
         // таблица переходов
-        std::map<Events::Base<CustomEvents>, State<CustomEvents> *> m_transfers;
+        // std::map<Events::Base<CustomEvents>, State<CustomEvents> *>
+        //     m_transfers;
+        std::map<std::pair<State<CustomEvents> *, CustomEvents>,
+                 State<CustomEvents> *>
+            m_transfers;
 
         // Текущее состояние
         State<CustomEvents> *m_cur_state;
@@ -230,45 +251,74 @@ namespace SM
                 std::cout << "Unknown state: " << name << "\n";
         }
 
+        void setStartState(State<CustomEvents> *state)
+        {
+            if (!state)
+                return;
+            auto it = m_states.find(state->getName());
+            if (it != m_states.end())
+            {
+                m_cur_state = it->second.get();
+                // transfer(m_cur_state->init({}));
+            }
+            else
+                std::cout << "Unknown state: " << state->getName() << "\n";
+        }
+
         // /// @brief Отправить запрос
         // /// @param params данные запроса
         // void request(const outsideParams &params);
 
-        /// @brief Функция обработки переходов из одного состояния в другое. Он
-        /// должен вызывать функции exit() и init() у состояний.
+        /// @brief Функция обработки переходов из одного состояния в
+        /// другое. Он должен вызывать функции exit() и init() у
+        /// состояний.
         /// @param event Событие перехода
         virtual void transfer(const Events::Base<CustomEvents> &event){};
 
-        /// @brief Добавить состояние в сценарий
-        /// @param state само состояние
-
         /// @brief Добавить в сценарий новое состояние
-        /// @tparam DerivedState Тип нового состояния, унаследованного от State
+        /// @tparam DerivedState Тип нового состояния, унаследованного
+        /// от State
         /// @tparam ...Args Типы параметров конструктора
         /// @param ...args Параметры конструктора нового состояния
         template <typename DerivedState, typename... Args>
         DerivedState *addState(Args &&...args)
         {
-            auto state =
-                std::make_unique<DerivedState>(std::forward<Args>(args)...);
+            auto state = std::make_unique<DerivedState>(
+                std::forward<Args>(args)...);
             const std::string &name = state->getName();
 
             if (m_states.count(name) > 0)
+            {
+                std::cout << "Cannot add state (" << state->getName()
+                          << "): state already exists\n";
                 return nullptr;
+            }
 
             m_states[state->getName()] = std::move(state);
+            std::cout << "State (" << state->getName() << ") added\n";
             return state.get();
+        }
 
-            // std::cout << "Adding state: " << state->getName() << '\n';
-            // for (auto &el : m_states)
-            // {
-            //     if (el->getName() == state->getName())
-            //         return;
-            // }
-            // // state->setRequester([this](const outsideParams &params) {
-            // // request(params); });
-            // // m_states.emplace_back(std::move(state));
-            // m_states.emplace_back(state);
+        /// @brief Добавить переход first_state -> second_state :
+        /// custom_event
+        /// @tparam FirstDerivedState Тип первого состояния
+        /// @tparam SecondDerivedState Тип второго состояния
+        /// @param first_state Первое состояние
+        /// @param second_state Второе состояние
+        /// @param custom_event Условие перехода
+        /// @return Удалось ли добавить состояние
+        template <typename FirstDerivedState = State<CustomEvents>,
+                  typename SecondDerivedState = State<CustomEvents>>
+        bool addTransfer(FirstDerivedState *first_state,
+                         SecondDerivedState *second_state,
+                         const CustomEvents &custom_event)
+        {
+            m_transfers[std::make_pair(first_state, custom_event)] =
+                second_state;
+            std::cout << "Added state transfer (" << first_state->getName()
+                      << ") -" << (short)custom_event << "-> ("
+                      << second_state->getName() << ")\n";
+            return true;
         }
 
         State<CustomEvents> *getState(const std::string &name)
@@ -291,18 +341,21 @@ namespace SM
             //     transfer(m_cur_state->exit({}));
         }
 
-        virtual Events::Base<CustomEvents> init(const outsideParams &params)
+        virtual Events::Base<CustomEvents> init(
+            const outsideParams &params)
         {
             return Events::Base<CustomEvents>(Events::Type::None);
         };
 
         /// @brief Передать какие-то данные в текущее состояние
         /// @param params Данные для передачи в состояние
-        virtual Events::Base<CustomEvents> update(const outsideParams &params)
+        virtual Events::Base<CustomEvents> update(
+            const outsideParams &params)
         {
             // if (m_cur_state)
             // {
-            //     std::cout << "Updating state: " << m_cur_state->getName()
+            //     std::cout << "Updating state: " <<
+            //     m_cur_state->getName()
             //               << "\n";
             //     transfer(m_cur_state->update(params));
             // }
