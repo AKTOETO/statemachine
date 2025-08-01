@@ -1,4 +1,5 @@
 project(RequestNewPassword)
 file(GLOB SRCS "*.cpp" "*.hpp")
 add_executable(${PROJECT_NAME} ${SRCS})
-target_link_libraries(${PROJECT_NAME} PRIVATE libstate)
+target_compile_options(${PROJECT_NAME} PRIVATE -g -fsanitize=address -fsanitize=undefined)
+target_link_libraries(${PROJECT_NAME} PRIVATE libstate -g -fsanitize=address -fsanitize=undefined)

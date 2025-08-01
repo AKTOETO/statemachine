@@ -1,6 +1,16 @@
 #include <iostream>
 #include <libstate.hpp>
 
+
+void printMap(const std::map<std::string, std::string>& m) {
+    std::cout<<std::endl;
+    for (const auto& [key, value] : m) {
+        std::cout << key << ": " << value << std::endl;
+    }
+    std::cout<<std::endl;
+}
+
+
 namespace Settings
 {
     enum class CustomNames
@@ -34,15 +44,21 @@ namespace States
         virtual Settings::MyEvent update(
             const SM::outsideParams &prams) override
         {
-            // если пароля нет
-            if (prams.at("password").length() == 0 ||
-                prams.at("action") == "TryAgain")
-                return SM::Events::Request{
-                    this, Settings::CustomEvents::TryAgain};
-
+            printMap(prams);
             // если пароль есть, нужно его проверить
-            return SM::Events::Switch{
-                this, Settings::CustomEvents::GotPassword, prams};
+            if (prams.find("password") != prams.end() &&
+                prams.at("password").length() > 0)
+            {
+                std::cout << "===> " << getName() << ": got password\n";
+
+                return SM::Events::Switch{
+                    this, Settings::CustomEvents::GotPassword, prams};
+            }
+            std::cout << "===> " << getName() << ": PasswordIsEmpty\n";
+
+            // если пароля нет
+            return SM::Events::Request{
+                this, Settings::CustomEvents::PasswordIsEmpty};
         }
     };
 
@@ -55,10 +71,17 @@ namespace States
         virtual Settings::MyEvent update(
             const SM::outsideParams &prams) override
         {
-            if (isPassworCorrect(prams.at("password")))
+            printMap(prams);
+            if (prams.find("password") != prams.end() &&
+                isPassworCorrect(prams.at("password")))
+            {
+                std::cout << "===> " << getName()
+                          << ": PasswordIsCorrect\n";
                 return SM::Events::Switch{
                     this, Settings::CustomEvents::PasswordIsCorrect};
+            }
 
+            std::cout << "===> " << getName() << ": PasswordIsIncorrect\n";
             return SM::Events::Switch{
                 this, Settings::CustomEvents::PasswordIsIncorrect};
         }
@@ -66,6 +89,8 @@ namespace States
       private:
         bool isPassworCorrect(const std::string &password)
         {
+
+            std::cout << "===> " << getName() << ": is passwor Correct\n";
             return password == "123";
         }
     };
@@ -79,13 +104,19 @@ namespace States
         virtual Settings::MyEvent update(
             const SM::outsideParams &prams) override
         {
-            if (prams.at("password").length() == 0 ||
-                prams.at("action") == "TryAgain")
-                return SM::Events::Request{
-                    this, Settings::CustomEvents::TryAgain};
+            printMap(prams);
+            if (prams.find("password") != prams.end() &&
+                prams.at("password").length() > 0)
+            {
+                std::cout << "===> " << getName() << ": GotPassword\n";
+                return SM::Events::Switch{
+                    this, Settings::CustomEvents::GotPassword, prams};
+            }
 
-            return SM::Events::Switch{
-                this, Settings::CustomEvents::GotPassword, prams};
+            std::cout << "===> " << getName() << ": PasswordIsEmpty\n";
+
+            return SM::Events::Request{
+                this, Settings::CustomEvents::PasswordIsEmpty};
         }
     };
 
@@ -98,13 +129,21 @@ namespace States
         virtual Settings::MyEvent update(
             const SM::outsideParams &prams) override
         {
-            if (prams.at("password").length() == 0 ||
-                prams.at("action") == "TryAgain")
+            printMap(prams);
+            if (prams.find("password") != prams.end() &&
+                prams.at("password").length() > 0)
+            {
+                std::cout << "===> " << getName()
+                          << ": PasswordIsCorrect\n";
                 return SM::Events::Request{
-                    this, Settings::CustomEvents::PasswordIsEmpty};
+                    this, Settings::CustomEvents::PasswordIsCorrect,
+                    prams};
+            }
+                std::cout << "===> " << getName()
+                          << ": PasswordIsEmpty\n";
 
             return SM::Events::Request{
-                this, Settings::CustomEvents::PasswordIsCorrect, prams};
+                this, Settings::CustomEvents::PasswordIsEmpty};
         }
     };
 } // namespace States
@@ -116,13 +155,14 @@ class UpdatePassword : public Settings::MyScenario
         const SM::outsideParams &params) override
     {
 
-        std::cout << "Инициализация сценария\n";
+        std::cout << "Добавление событий\n";
         // Добавляем состояния
         auto cp = addState<States::CheckPassword>();
         auto rnp = addState<States::RequestNewPassword>();
         auto rop = addState<States::RequestOldPassword>();
         auto sp = addState<States::SavePassword>();
 
+        std::cout << "Добавление переходов\n";
         // Добавляем переходы между состояниями
         addTransfer(rop, cp, Settings::CustomEvents::GotPassword);
         addTransfer(rop, rop, Settings::CustomEvents::TryAgain);
@@ -132,6 +172,7 @@ class UpdatePassword : public Settings::MyScenario
         addTransfer(rnp, sp, Settings::CustomEvents::GotPassword);
         addTransfer(sp, rnp, Settings::CustomEvents::PasswordIsEmpty);
 
+        std::cout << "Установка граничных состояний\n";
         // Установка граничных состояний
         setStartState(rop);
         // setFinishState(sp);
@@ -149,6 +190,12 @@ int main()
     UpdatePassword up;
     up.init({});
     up.update({});
+    up.update({{"password", "456"}});
+    up.update({});
+    up.update({});
+    up.update({});
+    up.update({});
+
 
     return 0;
 }

@@ -15,13 +15,16 @@ file(GLOB_RECURSE HEADER_FILES
 )
 
 # Создадим статическую библиотеку libstate из исходников
-add_library(libstate STATIC ${SRC_FILES})
+add_library(${PROJECT_NAME} STATIC ${SRC_FILES})
 
 # Путь к заголовочным файлам для использования при компиляции
-target_include_directories(libstate PUBLIC
+target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
     $<INSTALL_INTERFACE:include>
 )
+
+target_compile_options(${PROJECT_NAME} PRIVATE -g -fsanitize=address -fsanitize=undefined)
+target_link_options(${PROJECT_NAME} PRIVATE -g -fsanitize=address -fsanitize=undefined)
 
 # # Установка библиотеки
 # install(TARGETS libstate

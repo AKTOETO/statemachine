@@ -288,9 +288,10 @@ namespace SM
                 return nullptr;
             }
 
+            auto* row_ptr_state = state.get();
+            std::cout << "State (" << name << ") added\n";
             m_states[state->getName()] = std::move(state);
-            std::cout << "State (" << state->getName() << ") added\n";
-            return state.get();
+            return row_ptr_state;
         }
 
         /// @brief Добавить переход first_state -> second_state :
@@ -307,6 +308,13 @@ namespace SM
                          SecondDerivedState *second_state,
                          const CustomEvents &custom_event)
         {
+            if (!first_state || !second_state)
+            {
+                std::cout << "ERROR: empty state "
+                          << (!first_state ? 1 : 0) << " "
+                          << (!second_state ? 1 : 0) << std::endl;
+                return false;
+            }
             m_transfers[std::make_pair(first_state, custom_event)] =
                 second_state;
             std::cout << "Added state handleLibEvents ("
@@ -350,7 +358,7 @@ namespace SM
             case Events::Type::Request:
                 std::cout << "Got Request from state: " << sender_name
                           << "\n";
-                // поиск перехода
+                // TODO: поиск перехода
 
                 break;
             case Events::Type::Switch:
